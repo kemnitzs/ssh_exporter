@@ -81,6 +81,7 @@ type CredentialConfig struct {
 	KeyFile            string `yaml:"keyfile"`
 	ScriptResult       string // For internal use only
 	ScriptReturnCode   int    // For internal use only
+	ScriptExecTime      int64    // For internal use only
 	ScriptError        string // For internal use only
 	ResultPatternMatch int8   // For internal use only
 }
@@ -213,19 +214,27 @@ func PrometheusFormatResponse(c Config) (string, error) {
 
 	var response string
 	exitStatusFormatStr := "ssh_exporter_%s_exit_status{name=\"%s\",host=\"%s\",user=\"%s\",script=\"%s\",exit_status=\"%d\"} %d"
+	execTimeFormatStr := "ssh_exporter_%s_exec_time{name=\"%s\",host=\"%s\",user=\"%s\",script=\"%s\"} %d"
 	patternMatchFormatStr := "ssh_exporter_%s_pattern_match{name=\"%s\",host=\"%s\",user=\"%s\",script=\"%s\",regex=\"%s\"} %d"
 
 	exitStatusHelpStr := "# HELP ssh_exporter_%s_exit_status Integer exit status of commands and metadata about the command's execution.\n# TYPE ssh_exporter gauge"
+	execTimeHelpStr := "# HELP ssh_exporter_%s_exec_time Integer exec time of commands in milliseconds.\n# TYPE ssh_exporter gauge"
 	patternMatchHelpStr := "# HELP ssh_exporter_%s_pattern_match Boolean match of regex on output of script of commands and metadata about the command's execution.\n# TYPE ssh_exporter gauge"
 
 	for _, i := range c.Scripts {
 		if i.Ignored != true {
 			exitedDoc := fmt.Sprintf(exitStatusHelpStr, i.Name)
+			execTimeDoc := fmt.Sprintf(execTimeHelpStr, i.Name)
 			matchedDoc := fmt.Sprintf(patternMatchHelpStr, i.Name)
 
 			response = fmt.Sprintf("%s%s", response, exitedDoc)
 			for _, j := range i.Credentials {
 				s := fmt.Sprintf(exitStatusFormatStr, i.Name, i.Name, j.Host, j.User, i.Script, j.ScriptReturnCode, j.ScriptReturnCode)
+				response = fmt.Sprintf("%s\n%s", response, s)
+			}
+                        response = fmt.Sprintf("%s%s", response, execTimeDoc)
+			for _, j := range i.Credentials {
+				s := fmt.Sprintf(execTimeFormatStr, i.Name, i.Name, j.Host, j.User, i.Script, j.ScriptExecTime)
 				response = fmt.Sprintf("%s\n%s", response, s)
 			}
 			response = fmt.Sprintf("%s\n%s", response, matchedDoc)
@@ -278,8 +287,15 @@ func executeScript(script, pattern string, creds *[]CredentialConfig, done *sync
 	for i, c := range *creds {
 		done.Add(1)
 		go func() {
+                        start := time.Now()
+
 			result, status, err := executeScriptOnHost(c.Host, c.Port, c.User, c.KeyFile, script)
 
+			elapsed := time.Since(start)
+
+			// log.Printf("ssh code execution took %s", elapsed)
+
+			(*creds)[i].ScriptExecTime = int64(elapsed / time.Millisecond)
 			(*creds)[i].ScriptReturnCode = status
 			(*creds)[i].ScriptResult = result
 
