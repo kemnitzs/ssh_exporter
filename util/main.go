@@ -232,7 +232,7 @@ func PrometheusFormatResponse(c Config) (string, error) {
 				s := fmt.Sprintf(exitStatusFormatStr, i.Name, i.Name, j.Host, j.User, i.Script, j.ScriptReturnCode, j.ScriptReturnCode)
 				response = fmt.Sprintf("%s\n%s", response, s)
 			}
-                        response = fmt.Sprintf("%s%s", response, execTimeDoc)
+                        response = fmt.Sprintf("%s\n%s", response, execTimeDoc)
 			for _, j := range i.Credentials {
 				s := fmt.Sprintf(execTimeFormatStr, i.Name, i.Name, j.Host, j.User, i.Script, j.ScriptExecTime)
 				response = fmt.Sprintf("%s\n%s", response, s)
