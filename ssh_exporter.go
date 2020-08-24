@@ -12,7 +12,7 @@ package main
 //
 
 import (
-	"github.com/Nordstrom/ssh_exporter/util"
+	"github.com/kemnitzs/ssh_exporter/util"
 
 	"fmt"
 	"log"
