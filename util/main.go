@@ -155,13 +155,13 @@ func ParseConfig(c string, overwrite_host string) (Config, error) {
 func ParseQuery(w http.ResponseWriter, r *http.Request) (*regexp.Regexp, string, error) {
 
 	if r.URL.Query().Get("pattern") == "" {
-		return nil, errors.New("Probe endpoint was hit, but pattern parameter was not passed.")
+		return nil, "", errors.New("Probe endpoint was hit, but pattern parameter was not passed.")
 	}
 
 	p, err := regexp.Compile(string(r.URL.Query().Get("pattern")))
 
 	if r.URL.Query().Get("overwrite_host") == "" {
-		return nil, errors.New("Probe endpoint was hit, but overwrite_host parameter was not passed.")
+		return nil, "", errors.New("Probe endpoint was hit, but overwrite_host parameter was not passed.")
 	}
 
 	h := string(r.URL.Query().Get("overwrite_host"))
