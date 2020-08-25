@@ -160,11 +160,11 @@ func ParseQuery(w http.ResponseWriter, r *http.Request) (*regexp.Regexp, string,
 
 	p, err := regexp.Compile(string(r.URL.Query().Get("pattern")))
 
-	if r.URL.Query().Get("overwrite_host") == "" {
-		return nil, "", errors.New("Probe endpoint was hit, but overwrite_host parameter was not passed.")
+	if r.URL.Query().Get("target") == "" {
+		return nil, "", errors.New("Probe endpoint was hit, but target parameter was not passed.")
 	}
 
-	h := string(r.URL.Query().Get("overwrite_host"))
+	h := string(r.URL.Query().Get("target"))
 
 	return p, h, err
 }
