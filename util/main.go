@@ -133,7 +133,7 @@ func ParseFlags(c, p *string) (*string, *string) {
 	return c, p
 }
 
-func ParseConfig(c string) (Config, error) {
+func ParseConfig(c string, overwrite_host string) (Config, error) {
 
 	raw, err := ioutil.ReadFile(c)
 	FatalCheck(err)
@@ -142,7 +142,7 @@ func ParseConfig(c string) (Config, error) {
 	err = yaml.Unmarshal([]byte(raw), &initialConfig)
 	SoftCheck(err)
 
-	finalConfig, err := adjustConfig(initialConfig)
+	finalConfig, err := adjustConfig(initialConfig, overwrite_host)
 	SoftCheck(err)
 
 	return finalConfig, err
@@ -152,14 +152,21 @@ func ParseConfig(c string) (Config, error) {
 // ParseQuery parses HTTP query parameters for the 'pattern' query. Returns the
 // compiled regex pattern or an error.
 //
-func ParseQuery(w http.ResponseWriter, r *http.Request) (*regexp.Regexp, error) {
+func ParseQuery(w http.ResponseWriter, r *http.Request) (*regexp.Regexp, string, error) {
 
 	if r.URL.Query().Get("pattern") == "" {
 		return nil, errors.New("Probe endpoint was hit, but pattern parameter was not passed.")
 	}
 
 	p, err := regexp.Compile(string(r.URL.Query().Get("pattern")))
-	return p, err
+
+	if r.URL.Query().Get("overwrite_host") == "" {
+		return nil, errors.New("Probe endpoint was hit, but overwrite_host parameter was not passed.")
+	}
+
+	h := string(r.URL.Query().Get("overwrite_host"))
+
+	return p, h, err
 }
 
 //
@@ -253,10 +260,11 @@ func PrometheusFormatResponse(c Config) (string, error) {
 // AdjustConfig makes small changes to ensure the config file provided is
 // consistent.
 //
-func adjustConfig(c Config) (Config, error) {
+func adjustConfig(c Config, overwrite_host string) (Config, error) {
 
 	for c_i, v_i := range c.Scripts {
 		for c_j, v_j := range v_i.Credentials {
+			c.Scripts[c_i].Credentials[c_j].Host = overwrite_host
 			if v_j.Port == "" {
 				c.Scripts[c_i].Credentials[c_j].Port = "22"
 			}

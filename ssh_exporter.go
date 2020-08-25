@@ -59,10 +59,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func probeHandler(w http.ResponseWriter, r *http.Request) {
 
-	conf, err := util.ParseConfig(configPath)
+	pattern, overwrite_host, err := util.ParseQuery(w, r)
+        // parse the query befor this and add an overwrite host parameter to the ParseConfig function
+	// pass the overwrite thing and replace the host in the config with the one from the query. done
+	conf, err := util.ParseConfig(configPath, overwrite_host)
 	util.SoftCheck(err)
 
-	pattern, err := util.ParseQuery(w, r)
 	if util.SoftCheck(err) {
 		fmt.Fprintf(w, patternHelpText)
 	} else {
